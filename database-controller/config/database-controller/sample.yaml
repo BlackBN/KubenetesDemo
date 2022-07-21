@@ -1,0 +1,9 @@
+apiVersion: coolops.cn/v1alpha1 
+kind: DatabaseManager 
+metadata: 
+  name: example-mysql 
+  namespace: xujiayu
+spec: 
+  dbtype: "mysql" 
+  deploymentName: "example-mysql" 
+  replicas: 1 
