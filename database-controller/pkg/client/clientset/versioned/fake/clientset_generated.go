@@ -19,9 +19,9 @@ limitations under the License.
 package fake
 
 import (
-	clientset "github.com/BlackBN/KubenetesDemo/database-controller/pkg/client/clientset/versioned"
-	coolopsv1alpha1 "github.com/BlackBN/KubenetesDemo/database-controller/pkg/client/clientset/versioned/typed/databasemanager/v1alpha1"
-	fakecoolopsv1alpha1 "github.com/BlackBN/KubenetesDemo/database-controller/pkg/client/clientset/versioned/typed/databasemanager/v1alpha1/fake"
+	clientset "BlackBN/KubenetesDemo/database-controller/pkg/client/clientset/versioned"
+	coolopsv1alpha1 "BlackBN/KubenetesDemo/database-controller/pkg/client/clientset/versioned/typed/databasemanager/v1alpha1"
+	fakecoolopsv1alpha1 "BlackBN/KubenetesDemo/database-controller/pkg/client/clientset/versioned/typed/databasemanager/v1alpha1/fake"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"

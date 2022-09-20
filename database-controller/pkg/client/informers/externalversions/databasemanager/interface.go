@@ -19,8 +19,8 @@ limitations under the License.
 package databasemanager
 
 import (
-	v1alpha1 "github.com/BlackBN/KubenetesDemo/database-controller/pkg/client/informers/externalversions/databasemanager/v1alpha1"
-	internalinterfaces "github.com/BlackBN/KubenetesDemo/database-controller/pkg/client/informers/externalversions/internalinterfaces"
+	v1alpha1 "BlackBN/KubenetesDemo/database-controller/pkg/client/informers/externalversions/databasemanager/v1alpha1"
+	internalinterfaces "BlackBN/KubenetesDemo/database-controller/pkg/client/informers/externalversions/internalinterfaces"
 )
 
 // Interface provides access to each of this group's versions.

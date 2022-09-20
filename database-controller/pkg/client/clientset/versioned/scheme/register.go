@@ -19,7 +19,8 @@ limitations under the License.
 package scheme
 
 import (
-	coolopsv1alpha1 "github.com/BlackBN/KubenetesDemo/database-controller/pkg/apis/databasemanager/v1alpha1"
+	coolopsv1alpha1 "BlackBN/KubenetesDemo/database-controller/pkg/apis/databasemanager/v1alpha1"
+
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"

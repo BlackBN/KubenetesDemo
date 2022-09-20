@@ -19,7 +19,7 @@ limitations under the License.
 package versioned
 
 import (
-	coolopsv1alpha1 "github.com/BlackBN/KubenetesDemo/database-controller/pkg/client/clientset/versioned/typed/databasemanager/v1alpha1"
+	coolopsv1alpha1 "BlackBN/KubenetesDemo/database-controller/pkg/client/clientset/versioned/typed/databasemanager/v1alpha1"
 	"fmt"
 	"net/http"
 

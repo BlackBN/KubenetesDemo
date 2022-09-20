@@ -19,13 +19,13 @@ limitations under the License.
 package v1alpha1
 
 import (
+	databasemanagerv1alpha1 "BlackBN/KubenetesDemo/database-controller/pkg/apis/databasemanager/v1alpha1"
 	"context"
-	versioned "github.com/BlackBN/KubenetesDemo/database-controller/pkg/client/clientset/versioned"
-	internalinterfaces "github.com/BlackBN/KubenetesDemo/database-controller/pkg/client/informers/externalversions/internalinterfaces"
-	v1alpha1 "github.com/BlackBN/KubenetesDemo/database-controller/pkg/client/listers/databasemanager/v1alpha1"
+	versioned "BlackBN/KubenetesDemo/database-controller/pkg/client/clientset/versioned"
+	internalinterfaces "BlackBN/KubenetesDemo/database-controller/pkg/client/informers/externalversions/internalinterfaces"
+	v1alpha1 "BlackBN/KubenetesDemo/database-controller/pkg/client/listers/databasemanager/v1alpha1"
 	time "time"
 
-	databasemanagerv1alpha1 "github.com/BlackBN/KubenetesDemo/database-controller/pkg/apis/databasemanager/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	watch "k8s.io/apimachinery/pkg/watch"

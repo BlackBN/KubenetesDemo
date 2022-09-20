@@ -19,10 +19,10 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"github.com/BlackBN/KubenetesDemo/database-controller/pkg/client/clientset/versioned/scheme"
+	v1alpha1 "BlackBN/KubenetesDemo/database-controller/pkg/apis/databasemanager/v1alpha1"
+	"BlackBN/KubenetesDemo/database-controller/pkg/client/clientset/versioned/scheme"
 	"net/http"
 
-	v1alpha1 "github.com/BlackBN/KubenetesDemo/database-controller/pkg/apis/databasemanager/v1alpha1"
 	rest "k8s.io/client-go/rest"
 )
 

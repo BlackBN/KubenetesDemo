@@ -19,9 +19,9 @@ limitations under the License.
 package externalversions
 
 import (
-	versioned "github.com/BlackBN/KubenetesDemo/database-controller/pkg/client/clientset/versioned"
-	databasemanager "github.com/BlackBN/KubenetesDemo/database-controller/pkg/client/informers/externalversions/databasemanager"
-	internalinterfaces "github.com/BlackBN/KubenetesDemo/database-controller/pkg/client/informers/externalversions/internalinterfaces"
+	versioned "BlackBN/KubenetesDemo/database-controller/pkg/client/clientset/versioned"
+	databasemanager "BlackBN/KubenetesDemo/database-controller/pkg/client/informers/externalversions/databasemanager"
+	internalinterfaces "BlackBN/KubenetesDemo/database-controller/pkg/client/informers/externalversions/internalinterfaces"
 	reflect "reflect"
 	sync "sync"
 	time "time"

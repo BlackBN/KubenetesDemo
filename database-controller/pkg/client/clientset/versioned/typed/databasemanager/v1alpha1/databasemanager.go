@@ -19,11 +19,11 @@ limitations under the License.
 package v1alpha1
 
 import (
+	v1alpha1 "BlackBN/KubenetesDemo/database-controller/pkg/apis/databasemanager/v1alpha1"
 	"context"
-	scheme "github.com/BlackBN/KubenetesDemo/database-controller/pkg/client/clientset/versioned/scheme"
+	scheme "BlackBN/KubenetesDemo/database-controller/pkg/client/clientset/versioned/scheme"
 	"time"
 
-	v1alpha1 "github.com/BlackBN/KubenetesDemo/database-controller/pkg/apis/databasemanager/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"

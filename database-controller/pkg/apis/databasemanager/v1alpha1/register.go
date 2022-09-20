@@ -1,7 +1,8 @@
 package v1alpha1
 
 import (
-	"github.com/BlackBN/KubenetesDemo/database-controller/pkg/apis/databasemanager"
+	"BlackBN/KubenetesDemo/database-controller/pkg/apis/databasemanager"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -29,10 +30,7 @@ var (
 
 // Adds the list of known types to Scheme.
 func addKnownTypes(scheme *runtime.Scheme) error {
-	scheme.AddKnownTypes(SchemeGroupVersion,
-		&DatabaseManager{},
-		&DatabaseManagerList{},
-	)
+	scheme.AddKnownTypes(SchemeGroupVersion, &DatabaseManager{}, &DatabaseManagerList{})
 	metav1.AddToGroupVersion(scheme, SchemeGroupVersion)
 	return nil
 }
