@@ -27,10 +27,12 @@ func NodeNameIndexFunc(obj interface{}) (result []string, err error) {
 }
 func main() {
 
-	index := cache.NewIndexer(cache.MetaNamespaceKeyFunc, cache.Indexers{
-		"namespace1": NamespaceIndexFunc,
-		"nodeName1":  NodeNameIndexFunc,
-	})
+	index := cache.NewIndexer(
+		cache.MetaNamespaceKeyFunc,
+		cache.Indexers{
+			"namespace1": NamespaceIndexFunc,
+			"nodeName1":  NodeNameIndexFunc,
+		})
 
 	pod1 := &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
