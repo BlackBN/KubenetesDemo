@@ -25,5 +25,4 @@ _testmain.go
 *.test
 *.prof
 
-client-go-demo/vendor/
-controller-demo/vendor/
+vendor/
