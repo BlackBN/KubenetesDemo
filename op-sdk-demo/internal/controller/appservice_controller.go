@@ -66,6 +66,8 @@ func (r *AppServiceReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 	log.Info("begin Reconcile")
 	// TODO(user): your logic here
 	var myAppService demov1beta1.AppService
+	// r.Client 走的是 apiserver，而不是 cache
+	// 使用 r.Get() 才走的 cache
 	err := r.Client.Get(ctx, req.NamespacedName, &myAppService)
 	if err != nil {
 		if client.IgnoreNotFound(err) == nil {

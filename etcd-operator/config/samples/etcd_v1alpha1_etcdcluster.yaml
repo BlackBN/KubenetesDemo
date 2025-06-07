@@ -1,0 +1,12 @@
+apiVersion: etcd.bnblak.com/v1alpha1
+kind: EtcdCluster
+metadata:
+  labels:
+    app.kubernetes.io/name: etcd-operator
+    app.kubernetes.io/managed-by: kustomize
+  name: etcdcluster-sample
+  namespace: waf
+spec:
+  # TODO(user): Add fields here
+  size: 3
+  image: "cnych/etcd:v3.4.13"
