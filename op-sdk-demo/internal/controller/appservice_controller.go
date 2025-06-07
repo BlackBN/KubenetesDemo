@@ -18,21 +18,24 @@ package controller
 
 import (
 	"context"
-	"encoding/json"
-	"reflect"
+	//"encoding/json"
+	//"reflect"
 
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/client-go/util/retry"
+	//apierrors "k8s.io/apimachinery/pkg/api/errors"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/util/retry"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	demov1beta1 "github.com/BlackBN/KubenetesDemo/op-sdk-demo/api/v1beta1"
+	//"github.com/BlackBN/KubenetesDemo/op-sdk-demo/internal/controller"
 )
 
 var (
@@ -65,7 +68,7 @@ func (r *AppServiceReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 	var myAppService demov1beta1.AppService
 	err := r.Client.Get(ctx, req.NamespacedName, &myAppService)
 	if err != nil {
-		if client.IgnoreNotFound(err) != nil {
+		if client.IgnoreNotFound(err) == nil {
 			return ctrl.Result{}, nil
 		}
 		return ctrl.Result{}, err
@@ -75,71 +78,108 @@ func (r *AppServiceReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		return ctrl.Result{}, nil
 	}
 
-	deploy := &appsv1.Deployment{}
-	if err := r.Client.Get(ctx, req.NamespacedName, deploy); err != nil && apierrors.IsNotFound(err) {
-		// 关联 anno
-		data, err := json.Marshal(myAppService.Spec)
-		if err != nil {
-			return ctrl.Result{}, err
+	//---------------------------- 第二次逻辑 ----------------------------//
+	if err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+		deploy := &appsv1.Deployment{
+			ObjectMeta: v1.ObjectMeta{
+				Name:      myAppService.Name,
+				Namespace: myAppService.Namespace,
+			},
 		}
-		if myAppService.Annotations != nil {
-			myAppService.Annotations[oldSpecAnnotation] = string(data)
-		} else {
-			myAppService.Annotations = map[string]string{
-				oldSpecAnnotation: string(data),
-			}
-		}
-		if err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-			return r.Client.Update(ctx, &myAppService)
-		}); err != nil {
-			return ctrl.Result{}, err
-		}
-		newDeploy := NewDeploy(&myAppService)
-		if err := r.Client.Create(ctx, newDeploy); err != nil {
-			return ctrl.Result{}, err
-		}
-		newService := NewService(&myAppService)
-		if err := r.Client.Create(ctx, newService); err != nil {
-			return ctrl.Result{}, err
-		}
-		return ctrl.Result{}, nil
-	}
-	oldSpec := demov1beta1.AppServiceSpec{}
-	if err := json.Unmarshal([]byte(myAppService.Annotations[oldSpecAnnotation]), &oldSpec); err != nil {
+		_, err := ctrl.CreateOrUpdate(ctx, r.Client, deploy, func() error {
+			MutateDeployment(&myAppService, deploy)
+			return controllerutil.SetControllerReference(&myAppService, deploy, r.Scheme)
+		})
+		return err
+	}); err != nil {
 		return ctrl.Result{}, err
 	}
-	if !reflect.DeepEqual(myAppService.Spec, oldSpec) {
-		oldDeploy := &appsv1.Deployment{}
-		if err := r.Client.Get(ctx, req.NamespacedName, oldDeploy); err != nil {
-			return ctrl.Result{}, err
-		}
-		oldDeploy.Spec = NewDeploy(&myAppService).Spec
-		// 一般不会直接调用 Update 方法进行更新
-		// if err := r.Client.Update(ctx, oldDeploy); err != nil {
-		// 	return ctrl.Result{}, err
-		// }
-		if err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-			return r.Client.Update(ctx, oldDeploy)
-		}); err != nil {
-			return ctrl.Result{}, err
-		}
 
-		oldService := &corev1.Service{}
-		if err := r.Client.Get(ctx, req.NamespacedName, oldService); err != nil {
-			return ctrl.Result{}, err
+	if err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+		svc := &corev1.Service{
+			ObjectMeta: v1.ObjectMeta{
+				Name:      myAppService.Name,
+				Namespace: myAppService.Namespace,
+			},
 		}
-
-		oldService.Spec = NewService(&myAppService).Spec
-		// 一般不会直接调用 Update 方法进行更新
-		// if err := r.Client.Update(ctx, oldDeploy); err != nil {
-		// 	return ctrl.Result{}, err
-		// }
-		if err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-			return r.Client.Update(ctx, oldService)
-		}); err != nil {
-			return ctrl.Result{}, err
-		}
+		_, err := ctrl.CreateOrUpdate(ctx, r.Client, svc, func() error {
+			MutateService(&myAppService, svc)
+			return controllerutil.SetControllerReference(&myAppService, svc, r.Scheme)
+		})
+		return err
+	}); err != nil {
+		return ctrl.Result{}, err
 	}
+	log.Info("------------------------------------------------------")
+	//---------------------------- end ----------------------------//
+
+	//---------------------------- 第一次逻辑 ----------------------------//
+	// deploy := &appsv1.Deployment{}
+	// if err := r.Client.Get(ctx, req.NamespacedName, deploy); err != nil && apierrors.IsNotFound(err) {
+	// 	// 关联 anno
+	// 	data, err := json.Marshal(myAppService.Spec)
+	// 	if err != nil {
+	// 		return ctrl.Result{}, err
+	// 	}
+	// 	if myAppService.Annotations != nil {
+	// 		myAppService.Annotations[oldSpecAnnotation] = string(data)
+	// 	} else {
+	// 		myAppService.Annotations = map[string]string{
+	// 			oldSpecAnnotation: string(data),
+	// 		}
+	// 	}
+	// 	if err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+	// 		return r.Client.Update(ctx, &myAppService)
+	// 	}); err != nil {
+	// 		return ctrl.Result{}, err
+	// 	}
+	// 	newDeploy := NewDeploy(&myAppService)
+	// 	if err := r.Client.Create(ctx, newDeploy); err != nil {
+	// 		return ctrl.Result{}, err
+	// 	}
+	// 	newService := NewService(&myAppService)
+	// 	if err := r.Client.Create(ctx, newService); err != nil {
+	// 		return ctrl.Result{}, err
+	// 	}
+	// 	return ctrl.Result{}, nil
+	// }
+	// oldSpec := demov1beta1.AppServiceSpec{}
+	// if err := json.Unmarshal([]byte(myAppService.Annotations[oldSpecAnnotation]), &oldSpec); err != nil {
+	// 	return ctrl.Result{}, err
+	// }
+	// if !reflect.DeepEqual(myAppService.Spec, oldSpec) {
+	// 	oldDeploy := &appsv1.Deployment{}
+	// 	if err := r.Client.Get(ctx, req.NamespacedName, oldDeploy); err != nil {
+	// 		return ctrl.Result{}, err
+	// 	}
+	// 	oldDeploy.Spec = NewDeploy(&myAppService).Spec
+	// 	// 一般不会直接调用 Update 方法进行更新
+	// 	// if err := r.Client.Update(ctx, oldDeploy); err != nil {
+	// 	// 	return ctrl.Result{}, err
+	// 	// }
+	// 	if err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+	// 		return r.Client.Update(ctx, oldDeploy)
+	// 	}); err != nil {
+	// 		return ctrl.Result{}, err
+	// 	}
+
+	// 	oldService := &corev1.Service{}
+	// 	if err := r.Client.Get(ctx, req.NamespacedName, oldService); err != nil {
+	// 		return ctrl.Result{}, err
+	// 	}
+
+	// 	oldService.Spec = NewService(&myAppService).Spec
+	// 	// 一般不会直接调用 Update 方法进行更新
+	// 	// if err := r.Client.Update(ctx, oldDeploy); err != nil {
+	// 	// 	return ctrl.Result{}, err
+	// 	// }
+	// 	if err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+	// 		return r.Client.Update(ctx, oldService)
+	// 	}); err != nil {
+	// 		return ctrl.Result{}, err
+	// 	}
+	// }
+	//---------------------------- end ----------------------------//
 	return ctrl.Result{}, nil
 }
 
@@ -147,5 +187,7 @@ func (r *AppServiceReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 func (r *AppServiceReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&demov1beta1.AppService{}).
+		Owns(&appsv1.Deployment{}).
+		Owns(&corev1.Service{}).
 		Complete(r)
 }

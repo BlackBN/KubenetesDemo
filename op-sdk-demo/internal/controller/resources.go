@@ -8,6 +8,36 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
+func MutateDeployment(as *demov1beta1.AppService, deploy *appsv1.Deployment) {
+	labels := map[string]string{"myappservice": as.Name}
+	selector := v1.LabelSelector{
+		MatchLabels: labels,
+	}
+	deploy.Spec = appsv1.DeploymentSpec{
+		Replicas: as.Spec.Size,
+		Template: corev1.PodTemplateSpec{
+			ObjectMeta: v1.ObjectMeta{
+				Labels: labels,
+			},
+			Spec: corev1.PodSpec{
+				Containers: newContainers(as),
+			},
+		},
+		Selector: &selector,
+	}
+}
+
+func MutateService(as *demov1beta1.AppService, svc *corev1.Service) {
+	svc.Spec = corev1.ServiceSpec{
+		ClusterIP: svc.Spec.ClusterIP,
+		Ports:     as.Spec.Ports,
+		Type:      corev1.ServiceTypeNodePort,
+		Selector: map[string]string{
+			"myappservice": as.Name,
+		},
+	}
+}
+
 func NewDeploy(as *demov1beta1.AppService) *appsv1.Deployment {
 	labels := map[string]string{"myappservice": as.Name}
 	selector := v1.LabelSelector{
