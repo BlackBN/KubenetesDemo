@@ -1,0 +1,9 @@
+apiVersion: demo.bnblak.com/v1beta1
+kind: StsInstall
+metadata:
+  labels:
+    app.kubernetes.io/name: demo-operator
+    app.kubernetes.io/managed-by: kustomize
+  name: stsinstall-sample
+spec:
+  # TODO(user): Add fields here

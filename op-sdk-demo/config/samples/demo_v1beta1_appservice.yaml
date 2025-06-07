@@ -1,0 +1,16 @@
+apiVersion: demo.bnblak.com/v1beta1
+kind: AppService
+metadata:
+  labels:
+    app.kubernetes.io/name: op-sdk-demo
+    app.kubernetes.io/managed-by: kustomize
+  name: appservice-sample-1
+spec:
+  # TODO(user): Add fields here
+  size: 1
+  image: harbor.talentsec.cn/library/nginx:latest
+  ports:
+  - port: 80
+    targetPort: 80
+    nodePort: 30380
+  
