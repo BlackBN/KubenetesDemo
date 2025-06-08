@@ -1,0 +1,15 @@
+apiVersion: etcd.bnblak.com/v1alpha1
+kind: EtcdBackup
+metadata:
+  labels:
+    app.kubernetes.io/name: etcd-operator
+    app.kubernetes.io/managed-by: kustomize
+  name: etcdbackup-sample
+spec:
+  # TODO(user): Add fields here
+  etcd_url: "127.0.0.1:2379"
+  storage_type: s3
+  source:
+    path: "foo-bucket/snapshot.db"
+    secret: "secret"
+    endpoint: "127.0.0.1:2379"

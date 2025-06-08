@@ -7,6 +7,7 @@ rules:
 - apiGroups:
   - etcd.bnblak.com
   resources:
+  - etcdbackups
   - etcdclusters
   verbs:
   - create
@@ -19,12 +20,14 @@ rules:
 - apiGroups:
   - etcd.bnblak.com
   resources:
+  - etcdbackups/finalizers
   - etcdclusters/finalizers
   verbs:
   - update
 - apiGroups:
   - etcd.bnblak.com
   resources:
+  - etcdbackups/status
   - etcdclusters/status
   verbs:
   - get

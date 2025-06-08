@@ -14,12 +14,14 @@ const (
 	EtcdClusterLabelsName   = "etcd.bnblak.com/name"
 	EtcdClusterLabelsCommon = "app"
 
+	EtcdClusterLabelsCommonValue = "etcd"
+
 	EtcdDataDirName = "datadir"
 )
 
 func MutateHeadlessService(ec *etcdv1alpha1.EtcdCluster, svc *corev1.Service) {
 	svc.Labels = map[string]string{
-		EtcdClusterLabelsCommon: "etcd",
+		EtcdClusterLabelsCommon: EtcdClusterLabelsCommonValue,
 	}
 	svc.Spec = corev1.ServiceSpec{
 		ClusterIP: corev1.ClusterIPNone,
@@ -42,7 +44,7 @@ func MutateHeadlessService(ec *etcdv1alpha1.EtcdCluster, svc *corev1.Service) {
 
 func MutateStatefulSet(ec *etcdv1alpha1.EtcdCluster, sts *appsv1.StatefulSet) {
 	sts.Labels = map[string]string{
-		EtcdClusterLabelsCommon: "etcd",
+		EtcdClusterLabelsCommon: EtcdClusterLabelsCommonValue,
 	}
 	sts.Spec = appsv1.StatefulSetSpec{
 		Replicas:    ec.Spec.Size,
@@ -55,7 +57,7 @@ func MutateStatefulSet(ec *etcdv1alpha1.EtcdCluster, sts *appsv1.StatefulSet) {
 		Template: corev1.PodTemplateSpec{
 			ObjectMeta: v1.ObjectMeta{
 				Labels: map[string]string{
-					EtcdClusterLabelsCommon: "etcd",
+					EtcdClusterLabelsCommon: EtcdClusterLabelsCommonValue,
 					EtcdClusterLabelsName:   ec.Name,
 				},
 			},

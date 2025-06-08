@@ -22,6 +22,9 @@ resources:
 # default, aiding admins in cluster management. Those roles are
 # not used by the etcd-operator itself. You can comment the following lines
 # if you do not want those helpers be installed with your Project.
+- etcdbackup_admin_role.yaml
+- etcdbackup_editor_role.yaml
+- etcdbackup_viewer_role.yaml
 - etcdcluster_admin_role.yaml
 - etcdcluster_editor_role.yaml
 - etcdcluster_viewer_role.yaml
