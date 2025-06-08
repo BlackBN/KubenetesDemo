@@ -1,0 +1,82 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/instance: admission-registry
+    app.kubernetes.io/name: admission-registry
+  name: admission-registry
+  namespace: waf
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: admission-registry
+      app.kubernetes.io/name: admission-registry
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/instance: admission-registry
+        app.kubernetes.io/name: admission-registry
+    spec:
+      containers:
+      - name: admission-registry-whitelist
+        image: harbor.talentsec.cn/waf/admission-registry:v1.1.0
+        imagePullPolicy: Always
+        env:
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.name
+        - name: WHITELIST_REGISTRIES
+          value: "harbor.talentsec.cn,docker.io"        
+        ports:
+        - containerPort: 443
+          name: https-443
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 200m
+            memory: 256Mi
+          requests:
+            cpu: 100m
+            memory: 128Mi
+        volumeMounts:        
+        - mountPath: /etc/localtime
+          name: host-time
+          readOnly: true
+        - name: webhook-certs
+          mountPath: /etc/webhook/certs
+          readOnly: true
+      imagePullSecrets:
+      - name: talentsec-registry-secret
+      restartPolicy: Always
+      volumes:
+      - hostPath:
+          path: /etc/localtime
+          type: ""
+        name: host-time
+      - name: webhook-certs
+        secret: 
+          secretName: admission-registry-tls
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: admission-registry
+  namespace: waf
+spec:
+  ports:
+  - name: https-443
+    port: 443
+    protocol: TCP
+    targetPort: 443
+  selector:
+    app.kubernetes.io/instance: admission-registry
+    app.kubernetes.io/name: admission-registry
+  type: ClusterIP
