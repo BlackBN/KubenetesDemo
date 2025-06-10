@@ -8,11 +8,13 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/BlackBN/KubenetesDemo/etcd-operator/api/v1alpha1"
 	"github.com/BlackBN/KubenetesDemo/etcd-operator/internal/file"
 	"github.com/go-logr/logr"
 	"github.com/go-logr/zapr"
 
-	//"go.etcd.io/etcd/clientv3/snapshot" // 快照功能
+	//"go.etcd.io/etcd/clientv3"
+	//"go.etcd.io/etcd/clientv3/snapshot"
 	clientv3 "go.etcd.io/etcd/client/v3"
 
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -21,40 +23,43 @@ import (
 
 func logErr(log logr.Logger, err error, message string) error {
 	log.Error(err, message)
-	return fmt.Errorf("%s,%v", message, err)
+	return fmt.Errorf("%s: %s", message, err)
 }
 
 func main() {
+
 	var (
 		backupTempDir      string
 		etcdURL            string
+		backupURL          string
 		dialTimeoutSeconds int64
 		timeoutSeconds     int64
 	)
 
-	flag.StringVar(&backupTempDir, "backup-tmp-dir", os.TempDir(), "the dir to temp place backup etcd cluster")
-	flag.StringVar(&etcdURL, "etcd-url", "", "url for the backup etcd")
-	flag.Int64Var(&dialTimeoutSeconds, "dial-timeout-seconds", 5, "dialing timeout for the backup etcd")
-	flag.Int64Var(&timeoutSeconds, "timeout-seconds", 60, "timeout for the backup etcd")
+	flag.StringVar(&backupTempDir, "backup-tmp-dir", os.TempDir(), "The directory to temp place backup etcd cluster.")
+	flag.StringVar(&etcdURL, "etcd-url", "", "URL for backup etcd.")
+	flag.StringVar(&backupURL, "backup-url", "", "URL for backup etcd object storage.")
+	flag.Int64Var(&dialTimeoutSeconds, "dial-timeout-seconds", 5, "Timeout for dialing the Etcd.")
+	flag.Int64Var(&timeoutSeconds, "timeout-seconds", 60, "Timeout for Backup the Etcd.")
+	flag.Parse() // 一定要加上
 
-	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Second*time.Duration(timeoutSeconds))
-	defer cancel()
 	zapLogger := zap.NewRaw(zap.UseDevMode(true))
 	ctrl.SetLogger(zapr.NewLogger(zapLogger))
+
+	ctx, ctxCancel := context.WithTimeout(context.Background(), time.Second*time.Duration(timeoutSeconds))
+	defer ctxCancel()
+
 	log := ctrl.Log.WithName("backup")
 
-	log.Info("init etcd client and snapshot to local dir")
-	localPath := filepath.Join(backupTempDir, "snapshot.db")
-	//etcdManager := snapshot.NewV3(zapLogger)
-	// if err := etcdManager.Save(timeoutCtx, clientv3.Config{
-	// 	Endpoints: []string{
-	// 		etcdURL,
-	// 	},
-	// 	DialTimeout: time.Second * time.Duration(dialTimeoutSeconds),
-	// }, localPath); err != nil {
-	//
-	// }
+	storageType, bucketName, objectName, err := file.ParseBackupURL(backupURL)
+	if err != nil {
+		panic(logErr(log, err, "failed to parse backup url"))
+	}
 
+	log.Info("Connecting to Etcd and getting Snapshot data")
+
+	// 定义一个本地的数据目录
+	localPath := filepath.Join(backupTempDir, "snapshot.db")
 	cli, err := clientv3.New(clientv3.Config{
 		Endpoints:   []string{etcdURL}, //如果是集群，就在后面加所有的节点[]string{"localhost:2379", "localhost:22379", "localhost:32379"},
 		DialTimeout: time.Second * time.Duration(dialTimeoutSeconds),
@@ -64,17 +69,42 @@ func main() {
 	}
 	defer cli.Close()
 
-	//数据保存成功后，上传
-	endpoint := "play.min.io"
-	accessKeyID := "Q3AM3UQ867SPQQA43P2F"
-	secretAccessKey := "zuf+tfteSlswRu7BJ86wekitnifILbZam1KYY3TG"
-	useSSL := true
-	s3Uploader := file.NewS3Uploader(endpoint, accessKeyID, secretAccessKey, useSSL)
+	// // 创建etcd snapshot manager
+	// etcdManager := snapshot.NewV3(zapLogger)
+	// // 保存etcd snapshot数据到localPath
+	// err = etcdManager.Save(ctx, clientv3.Config{
+	// 	Endpoints:   []string{etcdURL},
+	// 	DialTimeout: time.Second * time.Duration(dialTimeoutSeconds),
+	// }, localPath)
+	// if err != nil {
+	// 	panic(logErr(log, err, "failed to get etcd snapshot data"))
+	// }
 
-	log.Info("begin uploading snapshot ....")
-	size, err := s3Uploader.Upload(timeoutCtx, localPath)
-	if err != nil {
-		panic(logErr(log, err, "failed to upload backup etcd"))
+	// 根据storageType来决定上传数据到什么地方去
+	switch storageType {
+	case string(v1alpha1.BackupStorageTypeS3): // s3
+		log.Info("Uploading snapshot...")
+		size, err := handleS3(ctx, bucketName, objectName, localPath)
+		if err != nil {
+			panic(logErr(log, err, "failed to upload backup etcd"))
+		}
+		log.WithValues("upload-size", size).Info("Backup completed")
+	case string(v1alpha1.BackupStorageTypeOSS): // oss（todo）
+	default:
+		panic(logErr(log, fmt.Errorf("storage type error"), fmt.Sprintf("unkown storage type:%v", storageType)))
 	}
-	log.WithValues("upload-size", size).Info("Backup success")
+
+}
+
+func handleS3(ctx context.Context, bucketName, objectName, localPath string) (int64, error) {
+	// 数据保存到本地成功
+	// 接下来就上传
+	endpoint := os.Getenv("ENDPOINT")
+	accessKeyID := os.Getenv("MINIO_ACCESS_KEY")
+	secretAccessKey := os.Getenv("MINIO_SECRET_KEY")
+	//endpoint := "play.min.io"
+	//accessKeyID := "Q3AM3UQ867SPQQA43P2F"
+	//secretAccessKey := "zuf+tfteSlswRu7BJ86wekitnifILbZam1KYY3TG"
+	s3Uploader := file.NewS3Uploader(endpoint, accessKeyID, secretAccessKey)
+	return s3Uploader.Upload(ctx, bucketName, objectName, localPath)
 }

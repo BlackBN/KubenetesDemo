@@ -68,7 +68,7 @@ func (r *EtcdClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 				Namespace: etcdCluster.Namespace,
 			},
 		}
-		MutateHeadlessService(etcdCluster, svc)
+		MutateHeadlessSvc(etcdCluster, svc)
 		return controllerutil.SetControllerReference(etcdCluster, svc, r.Scheme)
 	}); err != nil {
 		return reconcile.Result{}, err

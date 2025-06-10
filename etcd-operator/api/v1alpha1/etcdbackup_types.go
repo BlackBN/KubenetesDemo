@@ -18,22 +18,18 @@ package v1alpha1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type BackupStorageType string
-
-var (
-	BackupStorageTypeS3  BackupStorageType = "s3"
-	BackupStorageTypeOSS BackupStorageType = "oss"
-)
-
 type EtcdBackupPhase string
 
 var (
 	EtcdBackupPhaseBackingUp EtcdBackupPhase = "BackingUp"
 	EtcdBackupPhaseCompleted EtcdBackupPhase = "Completed"
 	EtcdBackupPhaseFailed    EtcdBackupPhase = "Failed"
+
+	BackupStorageTypeS3  BackupStorageType = "s3"
+	BackupStorageTypeOSS BackupStorageType = "oss"
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
@@ -43,19 +39,27 @@ var (
 type EtcdBackupSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
-	EtcdUrl      string            `json:"etcd_url"`
-	StorageType  BackupStorageType `json:"storage_type"`
+
+	EtcdUrl      string            `json:"etcdUrl"`
+	StorageType  BackupStorageType `json:"storageType"`
 	BackupSource `json:",inline"`
 }
 
 type BackupSource struct {
-	Source *Source `json:"source"`
+	S3  *S3BackupSource  `json:"s3,omitempty"`
+	OSS *OSSBackupSource `json:"oss,omitempty"`
 }
 
-type Source struct {
+type S3BackupSource struct {
 	Path     string `json:"path"`
-	Endpoint string `json:"endpoint,omitempty"`
-	Secret   string `json:"secret,omitempty"`
+	Endpoint string `json:"endpoint"`
+	// Secret Object: AccessKey AcessSecryt
+	Secret string `json:"secret"`
+}
+
+type OSSBackupSource struct {
+	Path   string `json:"path"`
+	Secret string `json:"secret"`
 }
 
 // EtcdBackupStatus defines the observed state of EtcdBackup.
@@ -63,8 +67,9 @@ type EtcdBackupStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 	Phase          EtcdBackupPhase `json:"phase,omitempty"`
-	StartTime      *v1.Time        `json:"start_time,omitempty"`
-	CompletionTime *v1.Time        `json:"completion_time,omitempty"`
+	StartTime      *metav1.Time    `json:"startTime,omitempty"`
+	CompletionTime *metav1.Time    `json:"completionTime,omitempty"`
+	//Condition
 }
 
 // +kubebuilder:object:root=true

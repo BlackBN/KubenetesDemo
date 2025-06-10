@@ -39,33 +39,42 @@ spec:
           spec:
             description: EtcdBackupSpec defines the desired state of EtcdBackup.
             properties:
-              etcd_url:
-                description: |-
-                  INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-                  Important: Run "make" to regenerate code after modifying this file
+              etcdUrl:
                 type: string
-              source:
+              oss:
                 properties:
-                  endpoint:
-                    type: string
                   path:
                     type: string
                   secret:
                     type: string
                 required:
                 - path
+                - secret
                 type: object
-              storage_type:
+              s3:
+                properties:
+                  endpoint:
+                    type: string
+                  path:
+                    type: string
+                  secret:
+                    description: 'Secret Object: AccessKey AcessSecryt'
+                    type: string
+                required:
+                - endpoint
+                - path
+                - secret
+                type: object
+              storageType:
                 type: string
             required:
-            - etcd_url
-            - source
-            - storage_type
+            - etcdUrl
+            - storageType
             type: object
           status:
             description: EtcdBackupStatus defines the observed state of EtcdBackup.
             properties:
-              completion_time:
+              completionTime:
                 format: date-time
                 type: string
               phase:
@@ -73,7 +82,7 @@ spec:
                   INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
                   Important: Run "make" to regenerate code after modifying this file
                 type: string
-              start_time:
+              startTime:
                 format: date-time
                 type: string
             type: object
