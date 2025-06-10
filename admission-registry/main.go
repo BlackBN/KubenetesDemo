@@ -11,52 +11,59 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/BlackBN/KubenetesDemo/admission-registry/pkg/types"
-	klog "k8s.io/klog/v2"
+	"github.com/BlackBN/KubenetesDemo/admission-registry/pkg"
+	"k8s.io/klog"
 )
 
 func main() {
-	//是需要tls的
-	var params types.WebhookServerParams
-	flag.Int64Var(&params.Port, "port", 443, "webhook listen port")
-	flag.StringVar(&params.CertFile, "tlsCertFile", "/etc/webhook/certs/tls.crt", "x509 certification file")
-	flag.StringVar(&params.KeyFile, "tlsKeyFile", "/etc/webhook/certs/tls.key", "x509 private key file")
+	var param pkg.WhSvrParam
+	// webhook http server（tls）
+	// 命令行参数
+	flag.IntVar(&param.Port, "port", 443, "Webhook Server Port.")
+	flag.StringVar(&param.CertFile, "tlsCertFile", "/etc/webhook/certs/tls.crt", "x509 certification file")
+	flag.StringVar(&param.KeyFile, "tlsKeyFile", "/etc/webhook/certs/tls.key", "x509 private key file")
 	flag.Parse()
-	certficate, err := tls.LoadX509KeyPair(params.CertFile, params.KeyFile)
+
+	cert, err := tls.LoadX509KeyPair(param.CertFile, param.KeyFile)
 	if err != nil {
 		klog.Errorf("Failed to load key pair: %v", err)
-		panic(err)
+		return
 	}
 
-	webhookServer := &types.WebhookServer{
+	// 实例化一个Webhook Server
+	whsrv := pkg.WebhookServer{
 		Server: &http.Server{
-			Addr: fmt.Sprintf(":%d", params.Port),
+			Addr: fmt.Sprintf(":%d", param.Port),
 			TLSConfig: &tls.Config{
-				Certificates: []tls.Certificate{
-					certficate,
-				},
+				Certificates: []tls.Certificate{cert},
 			},
 		},
 		WhiteListRegistries: strings.Split(os.Getenv("WHITELIST_REGISTRIES"), ","),
 	}
 
+	// 定义 http server handler
 	mux := http.NewServeMux()
-	mux.HandleFunc("/validate", webhookServer.Handler)
-	mux.HandleFunc("/mutate", webhookServer.Handler)
-	webhookServer.Server.Handler = mux
+	mux.HandleFunc("/validate", whsrv.Handler)
+	mux.HandleFunc("/mutate", whsrv.Handler)
+	whsrv.Server.Handler = mux
+
+	// 在一个新的 goroutine 里面去启动 webhook server
 	go func() {
-		if err := webhookServer.Server.ListenAndServeTLS("", ""); err != nil {
-			klog.Errorf("failed to listen webhook server: %v", err)
+		if err := whsrv.Server.ListenAndServeTLS("", ""); err != nil {
+			klog.Errorf("Failed to listen and serve webhook: %v", err)
 		}
 	}()
 
+	klog.Info("Server started")
+
+	// 监听 OS 的关闭信号
 	signalChan := make(chan os.Signal, 1)
 	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM)
 	<-signalChan
-	klog.Infof("get os shtdown signal")
 
-	if err := webhookServer.Server.Shutdown(context.Background()); err != nil {
-		klog.Errorf("failed to shutdown webhookserver: %v", err)
+	klog.Infof("Got OS shutdown signal, gracefully shutting down...")
+	if err := whsrv.Server.Shutdown(context.Background()); err != nil {
+		klog.Errorf("HTTP Server Shutdown error: %v", err)
 	}
 
 }
